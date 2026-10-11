@@ -270,14 +270,27 @@ def create_order():
         db.session.rollback()
         return jsonify({'success': False, 'message': f"Error creating order: {str(e)}"}), 500
 
-@app.route('/api/orders/<int:order_id>', methods=['GET'])
+def find_order_by_id_or_number(order_id):
+    order_id_str = str(order_id).strip()
+    order = None
+    if order_id_str.isdigit():
+        order = db.session.get(Order, int(order_id_str))
+    if not order:
+        order = Order.query.filter_by(order_number=order_id_str).first()
+    return order
+
+@app.route('/api/orders/<order_id>', methods=['GET'])
 def get_order(order_id):
-    order = db.get_or_404(Order, order_id)
+    order = find_order_by_id_or_number(order_id)
+    if not order:
+        return jsonify({'success': False, 'message': f"Order '{order_id}' not found."}), 404
     return jsonify({'success': True, 'order': order.to_dict()})
 
-@app.route('/api/orders/<int:order_id>', methods=['PUT', 'POST'])
+@app.route('/api/orders/<order_id>', methods=['PUT', 'POST'])
 def update_order(order_id):
-    order = db.get_or_404(Order, order_id)
+    order = find_order_by_id_or_number(order_id)
+    if not order:
+        return jsonify({'success': False, 'message': f"Order '{order_id}' not found."}), 404
     data = request.form.to_dict() if request.form else (request.get_json() or {})
     
     try:
@@ -340,9 +353,11 @@ def update_order(order_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': f"Error updating order: {str(e)}"}), 500
 
-@app.route('/api/orders/<int:order_id>/status', methods=['PATCH'])
+@app.route('/api/orders/<order_id>/status', methods=['PATCH', 'POST'])
 def update_order_status(order_id):
-    order = db.get_or_404(Order, order_id)
+    order = find_order_by_id_or_number(order_id)
+    if not order:
+        return jsonify({'success': False, 'message': f"Order '{order_id}' not found."}), 404
     data = request.get_json() or {}
     new_status = data.get('status', '').strip()
 
@@ -370,13 +385,20 @@ def update_order_status(order_id):
         'status_counts': status_counts
     })
 
-@app.route('/api/orders/<int:order_id>', methods=['DELETE'])
+@app.route('/api/orders/<order_id>', methods=['DELETE', 'POST'])
+@app.route('/api/orders/<order_id>/delete', methods=['DELETE', 'POST'])
 def delete_order(order_id):
-    order = db.get_or_404(Order, order_id)
-    order_num = order.order_number
-    db.session.delete(order)
-    db.session.commit()
-    return jsonify({'success': True, 'message': f"Order {order_num} has been deleted."})
+    try:
+        order = find_order_by_id_or_number(order_id)
+        if not order:
+            return jsonify({'success': False, 'message': f"Order '{order_id}' not found."}), 404
+        order_num = order.order_number
+        db.session.delete(order)
+        db.session.commit()
+        return jsonify({'success': True, 'message': f"Order {order_num} has been deleted."})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f"Failed to delete order: {str(e)}"}), 500
 
 # ----------------- CUSTOMER APIS -----------------
 
@@ -510,6 +532,25 @@ def export_csv():
         as_attachment=True,
         download_name=filename
     )
+
+
+@app.errorhandler(404)
+def handle_404(e):
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'API endpoint or resource not found'}), 404
+    return render_template('index.html'), 404
+
+@app.errorhandler(405)
+def handle_405(e):
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'Method not allowed for this API endpoint'}), 405
+    return render_template('index.html'), 405
+
+@app.errorhandler(500)
+def handle_500(e):
+    if request.path.startswith('/api/'):
+        return jsonify({'success': False, 'message': 'Internal server error'}), 500
+    return render_template('index.html'), 500
 
 if __name__ == '__main__':
     with app.app_context():

@@ -132,10 +132,18 @@ class CakeShopAppTestCase(unittest.TestCase):
         self.assertEqual(patch_resp.json['order']['status'], 'Preparing')
         print(f"[PASS] Test 07: Status successfully patched to 'Preparing'")
 
-        # Test Delete
+        # Test Delete by ID
         del_resp = self.client.delete(f'/api/orders/{order_id}')
         self.assertEqual(del_resp.status_code, 200)
-        print(f"[PASS] Test 08: Order {order_id} successfully deleted.")
+        self.assertTrue(del_resp.json['success'])
+        print(f"[PASS] Test 08: Order {order_id} successfully deleted via DELETE.")
+
+        # Test Delete non-existent order returns 404 JSON
+        del_404 = self.client.delete(f'/api/orders/{order_id}')
+        self.assertEqual(del_404.status_code, 404)
+        self.assertFalse(del_404.json['success'])
+        self.assertIn('not found', del_404.json['message'])
+        print(f"[PASS] Test 08b: Deleting non-existent order returns clean JSON 404.")
 
     def test_09_customers_api(self):
         resp = self.client.get('/api/customers')

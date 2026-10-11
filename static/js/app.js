@@ -617,6 +617,9 @@ const App = {
     event.stopPropagation();
     this.removeDropdowns();
 
+    const ord = (this.orders || []).find(o => o.id === orderId);
+    const orderLabel = ord ? ord.order_number : `Order #${orderId}`;
+
     const menu = document.createElement('div');
     menu.className = 'status-floating-menu';
     menu.style.cssText = `
@@ -645,7 +648,7 @@ const App = {
         <i data-lucide="printer" style="width:14px; height:14px;"></i> Print Ticket
       </button>
       <div style="height:1px; background:var(--border-light); margin:3px 0;"></div>
-      <button class="btn btn-sm" style="justify-content:flex-start; color:#C53030;" onclick="App.confirmDeleteOrder(${orderId})">
+      <button class="btn btn-sm" style="justify-content:flex-start; color:#C53030;" onclick="App.confirmDeleteOrder(${orderId}, '${orderLabel}')">
         <i data-lucide="trash-2" style="width:14px; height:14px; color:#C53030;"></i> Delete Order
       </button>
     `;
@@ -738,7 +741,7 @@ const App = {
       const deleteBtn = document.getElementById('view-delete-btn');
       if (deleteBtn) {
         deleteBtn.onclick = () => {
-          this.confirmDeleteOrder(ord.id);
+          this.confirmDeleteOrder(ord.id, ord.order_number);
         };
       }
 
@@ -783,30 +786,82 @@ const App = {
   /* ==========================================================================
      Delete Confirmation
      ========================================================================== */
-  confirmDeleteOrder(orderId) {
+  confirmDeleteOrder(orderId, orderLabel = '') {
+    if (!orderId) {
+      this.showToast('No order selected for deletion.', 'error');
+      return;
+    }
     this.selectedOrderForDelete = orderId;
+    const labelEl = document.getElementById('delete-confirm-order-text');
+    if (labelEl) {
+      labelEl.textContent = orderLabel ? `Order ${orderLabel}` : `Order #${orderId}`;
+    }
     this.openModal('delete-confirm-modal');
   },
 
   async executeDeleteOrder() {
-    if (!this.selectedOrderForDelete) return;
+    const orderId = this.selectedOrderForDelete;
+    if (!orderId) {
+      this.closeModal('delete-confirm-modal');
+      this.showToast('No order selected for deletion.', 'error');
+      return;
+    }
+
+    const confirmBtn = document.getElementById('confirm-delete-action-btn');
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<span>Deleting...</span>';
+    }
 
     try {
-      const resp = await fetch(`/api/orders/${this.selectedOrderForDelete}`, {
-        method: 'DELETE'
+      let resp = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json' }
       });
-      const data = await resp.json();
-      if (!data.success) throw new Error(data.message);
+
+      // Fallback to POST /delete if method not allowed
+      if (!resp.ok && (resp.status === 405 || resp.status === 404)) {
+        resp = await fetch(`/api/orders/${orderId}/delete`, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' }
+        });
+      }
+
+      const contentType = resp.headers.get('content-type') || '';
+      let data = null;
+      if (contentType.includes('application/json')) {
+        data = await resp.json();
+      } else {
+        const text = await resp.text();
+        throw new Error(text ? text.slice(0, 100) : `HTTP ${resp.status}`);
+      }
+
+      if (!resp.ok || !data.success) {
+        throw new Error(data.message || `Failed to delete order (HTTP ${resp.status})`);
+      }
 
       this.closeModal('delete-confirm-modal');
       this.closeModal('view-order-modal');
-      this.showToast(data.message, 'success');
+      this.showToast(data.message || 'Order deleted successfully', 'success');
+
+      // Refresh table, stats, and calendar
       await this.refreshDashboard();
+      if (typeof CalendarModule !== 'undefined' && CalendarModule.init) {
+        CalendarModule.init();
+      }
+      if (typeof CustomersModule !== 'undefined' && CustomersModule.fetchCustomers) {
+        CustomersModule.fetchCustomers();
+      }
 
     } catch (err) {
+      console.error('Delete order error:', err);
       this.showToast('Error deleting order: ' + err.message, 'error');
     } finally {
       this.selectedOrderForDelete = null;
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = 'Delete Order';
+      }
     }
   },
 

@@ -946,14 +946,14 @@
       </div>
 
       <div class="modal-body">
-        <p style="font-size:14px; color:var(--text-secondary);">
-          Are you sure you want to delete this order? This action will permanently remove the order record and cannot be undone.
+        <p style="font-size:14px; color:var(--text-secondary); line-height: 1.5;">
+          Are you sure you want to delete <strong id="delete-confirm-order-text" style="color:var(--text-primary);">this order</strong>? This action will permanently remove the order record and cannot be undone.
         </p>
       </div>
 
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="App.closeModal('delete-confirm-modal')">Cancel</button>
-        <button type="button" class="btn btn-primary" style="background:#C53030; border-color:#C53030;" onclick="App.executeDeleteOrder()">
+        <button type="button" class="btn btn-primary" id="confirm-delete-action-btn" style="background:#C53030; border-color:#C53030;" onclick="App.executeDeleteOrder()">
           Delete Order
         </button>
       </div>
