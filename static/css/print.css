@@ -1,0 +1,130 @@
+/* ==========================================================================
+   Dessert's - Print Stylesheet
+   Clean, Printer-Friendly Daily Orders List and Kitchen Order Slips
+   ========================================================================== */
+
+@media print {
+  /* Hide all unnecessary navigation, sidebars, buttons, and decorative elements */
+  .sidebar,
+  .topbar,
+  .content-right-panel,
+  .btn,
+  .table-actions,
+  .pagination-bar,
+  .filter-tabs,
+  .search-container,
+  .toast-container,
+  .modal-backdrop:not(.active),
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  .main-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .content-layout {
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .content-center {
+    width: 100% !important;
+  }
+
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Print Header */
+  .print-only-header {
+    display: block !important;
+    text-align: center;
+    border-bottom: 2px solid #333333;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+
+  .print-brand-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 22pt;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .print-sub {
+    font-size: 10pt;
+    color: #555555;
+  }
+
+  /* Table layout for print */
+  .orders-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .orders-table th {
+    background-color: #F0F0F0 !important;
+    color: #000000 !important;
+    border: 1px solid #CCCCCC !important;
+    padding: 8px !important;
+    font-size: 10pt !important;
+  }
+
+  .orders-table td {
+    border: 1px solid #DDDDDD !important;
+    padding: 8px !important;
+    font-size: 9.5pt !important;
+  }
+
+  .orders-table tr {
+    page-break-inside: avoid;
+  }
+
+  .cake-thumb-wrapper {
+    width: 44px !important;
+    height: 44px !important;
+    border: 1px solid #CCCCCC !important;
+  }
+
+  /* Status Badges in print */
+  .status-badge {
+    border: 1px solid #999999 !important;
+    background: transparent !important;
+    color: #000000 !important;
+    font-size: 9pt !important;
+    padding: 2px 6px !important;
+  }
+
+  /* Modal print mode when printing a single order ticket */
+  .modal-backdrop.active {
+    position: static !important;
+    background: none !important;
+    padding: 0 !important;
+  }
+
+  .modal-backdrop.active .modal-container {
+    border: 2px solid #333333 !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    transform: none !important;
+  }
+
+  .modal-header .modal-close-btn,
+  .modal-footer {
+    display: none !important;
+  }
+}
+
+.print-only-header {
+  display: none;
+}

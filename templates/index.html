@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dessert's — Bakery Order Management</title>
+  
+  <!-- Favicon / Tab Cake Logo -->
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+  <link rel="alternate icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Print Only Header -->
+  <div class="print-only-header">
+    <div class="print-brand-title">Dessert's — Artisanal Cake Studio</div>
+    <div class="print-sub">Daily Bakery Order Production Schedule & Delivery Manifest</div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- ========================================================================
+         LEFT SIDEBAR NAVIGATION
+         ======================================================================== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="javascript:void(0)" class="brand-link" onclick="App.switchView('dashboard')">
+          <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Dessert's Logo" class="brand-logo-img">
+        </a>
+        <button class="close-sidebar-btn" id="close-sidebar-btn" aria-label="Close Sidebar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </button>
+
+        <button class="nav-item" data-view="all-orders">
+          <i data-lucide="list-ordered"></i>
+          <span>All Orders</span>
+        </button>
+
+        <button class="nav-item" data-view="delivery">
+          <i data-lucide="truck"></i>
+          <span>Delivery</span>
+        </button>
+
+        <button class="nav-item" data-view="calendar">
+          <i data-lucide="calendar"></i>
+          <span>Calendar</span>
+        </button>
+
+        <button class="nav-item" data-view="customers">
+          <i data-lucide="users"></i>
+          <span>Customers</span>
+        </button>
+
+        <button class="nav-item" data-view="settings">
+          <i data-lucide="settings"></i>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="doodle-card">
+          <svg class="whisk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          </svg>
+          <div class="doodle-text">
+            Better Organization<br>Bigger Dreams ♡
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ========================================================================
+         MAIN CONTENT AREA
+         ======================================================================== -->
+    <div class="main-wrapper">
+
+      <!-- Top Navigation Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Open Navigation">
+            <i data-lucide="menu"></i>
+          </button>
+
+          <div class="search-container">
+            <i data-lucide="search"></i>
+            <input type="text" id="global-search-input" class="search-input" placeholder="Search by order no, customer name or flavour...">
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="topbar-icon-btn" title="Notifications" onclick="App.showToast('All bakery systems operational', 'info')">
+            <i data-lucide="bell"></i>
+            <span class="badge-dot"></span>
+          </button>
+
+          <div class="profile-dropdown">
+            <div class="profile-btn" onclick="App.switchView('settings')">
+              <div class="profile-avatar">
+                <i data-lucide="cake" style="width: 18px; height: 18px;"></i>
+              </div>
+              <span class="profile-name">Dessert's</span>
+              <i data-lucide="chevron-down" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Layout Body -->
+      <div class="content-layout">
+
+        <!-- Center Column -->
+        <main class="content-center">
+
+          <!-- ================= MAIN ORDERS VIEW (DASHBOARD & ALL ORDERS) ================= -->
+          <section id="view-dashboard" style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="view-header">
+              <div class="view-title-group">
+                <h1 class="view-title" id="orders-view-title">
+                  <i data-lucide="calendar" id="orders-view-icon"></i>
+                  <span id="orders-view-heading">Today's Orders</span>
+                </h1>
+                <span class="current-date-badge" id="current-date-text">11 October 2026</span>
+                <span id="dashboard-date-filter-label" class="weight-pill" style="display:none; background:var(--primary-light); color:var(--primary);"></span>
+              </div>
+
+              <div style="display:flex; gap:10px; align-items:center;">
+                <button class="btn btn-secondary" id="export-csv-btn" onclick="App.downloadCSV()">
+                  <i data-lucide="download"></i>
+                  <span>Export CSV</span>
+                </button>
+                <button class="btn btn-primary" onclick="OrderFormModule.openAddOrderModal()">
+                  <i data-lucide="plus"></i>
+                  <span>Add Order</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Secondary Filters Bar (Flavour, Sort by, Reset) -->
+            <div class="card" id="all-orders-filter-bar" style="padding: 12px 18px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;">
+              <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <label style="font-weight:600; font-size:12px; color:var(--text-muted);">Flavour:</label>
+                  <select id="filter-flavour-select" class="form-select" style="width: auto; padding: 6px 12px; font-size: 12.5px;">
+                    <option value="">All Flavours</option>
+                    <option value="Vanilla">Vanilla</option>
+                    <option value="Chocolate">Chocolate</option>
+                    <option value="Red Velvet">Red Velvet</option>
+                    <option value="Butterscotch">Butterscotch</option>
+                    <option value="Blueberry">Blueberry</option>
+                    <option value="Strawberry">Strawberry</option>
+                    <option value="Biscoff">Lotus Biscoff</option>
+                  </select>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <label style="font-weight:600; font-size:12px; color:var(--text-muted);">Sort by:</label>
+                  <select id="all-orders-sort" class="form-select" style="width: auto; padding: 6px 12px; font-size: 12.5px;">
+                    <option value="newest">Newest First</option>
+                    <option value="earliest_delivery">Earliest Delivery</option>
+                    <option value="latest_delivery">Latest Delivery</option>
+                    <option value="price_high">Highest Price</option>
+                    <option value="price_low">Lowest Price</option>
+                  </select>
+                </div>
+              </div>
+
+              <button class="btn btn-secondary btn-sm" onclick="App.resetFilters()">
+                <i data-lucide="refresh-cw"></i> Reset Filters
+              </button>
+            </div>
+
+            <!-- Status Tabs (Matching reference mockup) -->
+            <div class="filter-tabs">
+              <button class="tab-btn active" data-status="All">
+                <span>All (<span id="count-tab-all">12</span>)</span>
+              </button>
+              <button class="tab-btn" data-status="Pending">
+                <span class="tab-dot pending"></span>
+                <span>Pending (<span id="count-tab-pending">4</span>)</span>
+              </button>
+              <button class="tab-btn" data-status="Preparing">
+                <span class="tab-dot preparing"></span>
+                <span>Preparing (<span id="count-tab-preparing">3</span>)</span>
+              </button>
+              <button class="tab-btn" data-status="Ready">
+                <span class="tab-dot ready"></span>
+                <span>Ready (<span id="count-tab-ready">3</span>)</span>
+              </button>
+              <button class="tab-btn" data-status="Delivered">
+                <span class="tab-dot delivered"></span>
+                <span>Delivered (<span id="count-tab-delivered">2</span>)</span>
+              </button>
+            </div>
+
+            <!-- Orders Table Card -->
+            <div class="card">
+              <div class="table-responsive">
+                <table class="orders-table">
+                  <thead>
+                    <tr>
+                      <th>Order No.</th>
+                      <th>Photo</th>
+                      <th>Customer</th>
+                      <th>Cake Details</th>
+                      <th>Delivery Date</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="orders-table-body">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination Footer -->
+              <div class="pagination-bar">
+                <div class="pagination-info" id="pagination-info">Showing 1-8 of 12 orders</div>
+                <div class="pagination-controls" id="pagination-controls">
+                  <!-- Pagination buttons -->
+                </div>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- ================= DELIVERY VIEW ================= -->
+          <section id="view-delivery" style="display: none; flex-direction: column; gap: 20px;">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h1 class="view-title">
+                  <i data-lucide="truck"></i>
+                  Delivery Schedule & Dispatch
+                </h1>
+                <span class="current-date-badge">Orders ready or in preparation for delivery</span>
+              </div>
+
+              <button class="btn btn-secondary" onclick="App.printTodayList()">
+                <i data-lucide="printer"></i>
+                <span>Print Delivery Manifest</span>
+              </button>
+            </div>
+
+            <div class="delivery-grid" id="delivery-cards-container">
+              <!-- Dynamically populated delivery cards -->
+            </div>
+          </section>
+
+          <!-- ================= CALENDAR VIEW ================= -->
+          <section id="view-calendar" style="display: none; flex-direction: column; gap: 20px;">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h1 class="view-title">
+                  <i data-lucide="calendar"></i>
+                  Bakery Delivery Calendar
+                </h1>
+                <span class="current-date-badge">Monthly delivery view and order scheduling</span>
+              </div>
+
+              <button class="btn btn-primary" onclick="OrderFormModule.openAddOrderModal()">
+                <i data-lucide="plus"></i>
+                <span>Add Scheduled Order</span>
+              </button>
+            </div>
+
+            <div class="calendar-view-container" id="full-calendar-container">
+              <div class="full-calendar-card">
+                <div class="cal-month-nav">
+                  <h2 id="full-cal-month-title" style="font-size:18px;">October 2026</h2>
+                  <div style="display:flex; gap:6px;">
+                    <button class="cal-nav-btn" onclick="CalendarModule.prevMonth()"><i data-lucide="chevron-left"></i></button>
+                    <button class="cal-nav-btn" onclick="CalendarModule.nextMonth()"><i data-lucide="chevron-right"></i></button>
+                  </div>
+                </div>
+
+                <div class="calendar-weekdays">
+                  <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                </div>
+                <div class="full-cal-grid" id="full-cal-days-grid">
+                  <!-- Full calendar day cells -->
+                </div>
+              </div>
+
+              <!-- Date Details Drawer -->
+              <div class="card" id="cal-date-orders-drawer" style="padding:20px; display:flex; flex-direction:column; gap:12px;">
+                <h3 id="cal-drawer-title" style="font-size:16px;">Select a date to view orders</h3>
+                <div id="cal-drawer-list" style="display:flex; flex-direction:column; gap:10px; max-height:450px; overflow-y:auto;">
+                  <p class="text-muted">Click any date on the calendar to see all cake deliveries scheduled for that day.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ================= CUSTOMERS VIEW ================= -->
+          <section id="view-customers" style="display: none; flex-direction: column; gap: 20px;">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h1 class="view-title">
+                  <i data-lucide="users"></i>
+                  Customer Directory
+                </h1>
+                <span class="current-date-badge">Frequent patrons, contacts, and purchase history</span>
+              </div>
+            </div>
+
+            <div class="customers-grid" id="customers-grid-container">
+              <!-- Dynamically populated customer cards -->
+            </div>
+          </section>
+
+          <!-- ================= SETTINGS VIEW ================= -->
+          <section id="view-settings" style="display: none; flex-direction: column; gap: 20px;">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h1 class="view-title">
+                  <i data-lucide="settings"></i>
+                  Bakery Settings & System Info
+                </h1>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+              <div class="card" style="padding:24px;">
+                <h3 style="font-size:18px; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                  <i data-lucide="store" style="color:var(--primary);"></i> Bakery Profile
+                </h3>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <div class="form-group">
+                    <label class="form-label">Shop Name</label>
+                    <input type="text" class="form-input" value="Dessert's — Artisanal Cake Studio" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Currency</label>
+                    <input type="text" class="form-input" value="Indian Rupee (₹)" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Contact Phone</label>
+                    <input type="text" class="form-input" value="+91 98765 00000" readonly>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card" style="padding:24px;">
+                <h3 style="font-size:18px; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                  <i data-lucide="database" style="color:var(--primary);"></i> Data & Storage
+                </h3>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <p class="text-muted" style="font-size:13px;">
+                    Database: <strong>SQLite (desserts.db)</strong><br>
+                    Image Uploads: <strong>/static/uploads/ (Persistent)</strong><br>
+                    Backend: <strong>Flask + SQLAlchemy</strong>
+                  </p>
+                  <button class="btn btn-secondary" onclick="App.downloadCSV()">
+                    <i data-lucide="file-spreadsheet"></i> Backup All Orders (CSV)
+                  </button>
+                  <button class="btn btn-secondary" onclick="App.showToast('Database is active and healthy!', 'success')">
+                    <i data-lucide="check-circle"></i> Check Database Health
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </main>
+
+        <!-- ====================================================================
+             RIGHT-SIDE DASHBOARD PANEL (Inspired by reference mockup)
+             ==================================================================== -->
+        <aside class="content-right-panel" id="right-panel">
+
+          <!-- Mini Calendar Card -->
+          <div class="right-card">
+            <div class="calendar-header">
+              <span class="calendar-month-title" id="cal-month-title">October 2026</span>
+              <div style="display:flex; gap:4px;">
+                <button class="cal-nav-btn" onclick="CalendarModule.prevMonth()" aria-label="Previous Month">
+                  <i data-lucide="chevron-left" style="width:16px; height:16px;"></i>
+                </button>
+                <button class="cal-nav-btn" onclick="CalendarModule.nextMonth()" aria-label="Next Month">
+                  <i data-lucide="chevron-right" style="width:16px; height:16px;"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="calendar-weekdays">
+              <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+
+            <div class="calendar-days-grid" id="cal-days-grid">
+              <!-- Dynamically populated mini calendar days -->
+            </div>
+          </div>
+
+          <!-- Summary Metric Cards (Matching mockup layout and color accents) -->
+          <div class="right-card" style="padding: 14px;">
+            <div class="summary-grid">
+              
+              <!-- Total Orders -->
+              <div class="summary-card summary-total" onclick="App.switchView('dashboard')">
+                <div class="summary-icon">
+                  <i data-lucide="cake" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div class="summary-content">
+                  <span class="summary-count" id="stat-total-orders">12</span>
+                  <span class="summary-label">Total Orders</span>
+                </div>
+              </div>
+
+              <!-- Pending -->
+              <div class="summary-card summary-pending" onclick="App.switchView('pending-orders')">
+                <div class="summary-icon">
+                  <i data-lucide="clock" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div class="summary-content">
+                  <span class="summary-count" id="stat-pending-orders">4</span>
+                  <span class="summary-label">Pending</span>
+                </div>
+              </div>
+
+              <!-- Preparing -->
+              <div class="summary-card summary-preparing" onclick="App.currentStatus='Preparing'; App.switchView('dashboard');">
+                <div class="summary-icon">
+                  <i data-lucide="chef-hat" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div class="summary-content">
+                  <span class="summary-count" id="stat-preparing-orders">3</span>
+                  <span class="summary-label">Preparing</span>
+                </div>
+              </div>
+
+              <!-- Ready -->
+              <div class="summary-card summary-ready" onclick="App.switchView('ready-orders')">
+                <div class="summary-icon">
+                  <i data-lucide="check" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div class="summary-content">
+                  <span class="summary-count" id="stat-ready-orders">3</span>
+                  <span class="summary-label">Ready</span>
+                </div>
+              </div>
+
+              <!-- Delivered -->
+              <div class="summary-card summary-delivered" onclick="App.currentStatus='Delivered'; App.switchView('dashboard');">
+                <div class="summary-icon">
+                  <i data-lucide="truck" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div class="summary-content">
+                  <span class="summary-count" id="stat-delivered-orders">2</span>
+                  <span class="summary-label">Delivered</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Quick Actions List -->
+          <div class="right-card">
+            <h3 style="font-size:14px; color:var(--text-primary); margin-bottom:4px;">Quick Actions</h3>
+            <div class="quick-actions-list">
+              <button class="action-card-btn action-primary" onclick="App.printTodayList()">
+                <i data-lucide="printer"></i>
+                <span>Print Today's List</span>
+              </button>
+
+              <button class="action-card-btn" onclick="OrderFormModule.openAddOrderModal()">
+                <i data-lucide="calendar-plus"></i>
+                <span>Add New Order</span>
+              </button>
+
+              <button class="action-card-btn" onclick="App.switchView('delivery')">
+                <i data-lucide="truck"></i>
+                <span>View Upcoming Deliveries</span>
+              </button>
+
+              <button class="action-card-btn" onclick="App.downloadCSV()">
+                <i data-lucide="download"></i>
+                <span>Download Report</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Daily Financial Summary -->
+          <div class="right-card" style="padding: 16px;">
+            <h3 style="font-size:13.5px; color:var(--text-primary); margin-bottom:10px;">Sales Summary</h3>
+            <div class="info-box" style="gap:10px;">
+              <div class="info-row">
+                <span class="label">Total Sales:</span>
+                <span class="value" id="stat-total-sales" style="color:var(--primary);">₹24,800</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Advance Paid:</span>
+                <span class="value" id="stat-advance-received" style="color:#10B981;">₹17,400</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Balance Due:</span>
+                <span class="value" id="stat-balance-outstanding" style="color:#E53E3E;">₹7,400</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Doodled Bakery Quote -->
+          <div class="quote-card">
+            <div class="quote-text">
+              Good things<br>are baked<br>with love ♡
+            </div>
+            <svg width="40" height="14" viewBox="0 0 50 16" fill="none">
+              <path d="M2 14 C12 2, 22 18, 32 6 C38 -2, 45 10, 48 8" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+        </aside>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 1: ADD / EDIT CAKE ORDER MODAL
+       ======================================================================== -->
+  <div class="modal-backdrop" id="order-form-modal">
+    <div class="modal-container">
+      
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-form-title">
+          <i data-lucide="cake"></i> Add New Cake Order
+        </h2>
+        <button class="modal-close-btn" onclick="App.closeModal('order-form-modal')">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="order-form" onsubmit="event.preventDefault(); OrderFormModule.saveOrder(false);">
+          
+          <!-- A. Customer Details -->
+          <div class="form-section">
+            <div class="form-section-title">
+              <i data-lucide="user"></i> A. Customer Details
+            </div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Customer Name <span class="required">*</span></label>
+                <input type="text" id="form-customer-name" name="customer_name" class="form-input" placeholder="e.g. Priya Sharma" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Phone Number <span class="required">*</span></label>
+                <input type="tel" id="form-phone" name="phone" class="form-input" placeholder="e.g. +91 98765 43210" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Email Address (Optional)</label>
+                <input type="email" id="form-email" name="email" class="form-input" placeholder="e.g. priya@example.com">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Delivery Address <span class="required">*</span></label>
+                <input type="text" id="form-address" name="address" class="form-input" placeholder="Flat No, Building, Street, City" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- B. Cake Details -->
+          <div class="form-section" style="margin-top: 18px;">
+            <div class="form-section-title">
+              <i data-lucide="cake"></i> B. Cake Details
+            </div>
+            <div class="form-grid form-grid-3">
+              <div class="form-group">
+                <label class="form-label">Cake Name / Type <span class="required">*</span></label>
+                <input type="text" id="form-cake-name" name="cake_name" class="form-input" placeholder="e.g. Pastel Pink Floral Cake" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Cake Flavour <span class="required">*</span></label>
+                <input type="text" id="form-flavour" name="flavour" class="form-input" placeholder="e.g. Vanilla / Chocolate" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Cake Weight <span class="required">*</span></label>
+                <select id="form-weight" name="weight" class="form-select">
+                  <option value="500 g">500 g</option>
+                  <option value="1 kg" selected>1 kg</option>
+                  <option value="1.5 kg">1.5 kg</option>
+                  <option value="2 kg">2 kg</option>
+                  <option value="2.5 kg">2.5 kg</option>
+                  <option value="3 kg">3 kg</option>
+                  <option value="Custom">Custom</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Shape</label>
+                <select id="form-shape" name="shape" class="form-select">
+                  <option value="Round" selected>Round</option>
+                  <option value="Square">Square</option>
+                  <option value="Heart">Heart</option>
+                  <option value="Tiered">Tiered (Multi-tier)</option>
+                  <option value="Custom">Custom Shape</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Dietary Preference</label>
+                <select id="form-egg" name="egg_preference" class="form-select">
+                  <option value="Eggless" selected>Eggless</option>
+                  <option value="Contains Egg">Contains Egg</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Theme</label>
+                <input type="text" id="form-theme" name="theme" class="form-input" placeholder="e.g. Birthday, Anniversary, Floral">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Colour Palette</label>
+                <input type="text" id="form-colour" name="colour" class="form-input" placeholder="e.g. Pastel Pink & Gold">
+              </div>
+
+              <div class="form-group col-span-2">
+                <label class="form-label">Toppings & Decorations</label>
+                <input type="text" id="form-decorations" name="decorations" class="form-input" placeholder="e.g. Fresh roses, gold leaf, macarons">
+              </div>
+
+              <div class="form-group col-span-3">
+                <label class="form-label">Custom Text to Write on Cake</label>
+                <input type="text" id="form-custom-message" name="custom_message" class="form-input" placeholder="e.g. Happy 25th Birthday Priya!">
+              </div>
+
+              <div class="form-group col-span-3">
+                <label class="form-label">Cake Design Description</label>
+                <textarea id="form-design-description" name="design_description" class="form-textarea" placeholder="Specific theme design, floral piping, chocolate drip details..."></textarea>
+              </div>
+
+              <div class="form-group col-span-3">
+                <label class="form-label">Special Instructions & Baker Notes</label>
+                <textarea id="form-special-instructions" name="special_instructions" class="form-textarea" placeholder="Low sugar cream, allergy warnings, transport requirements..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- C. Cake Photo Upload Area -->
+          <div class="form-section" style="margin-top: 18px;">
+            <div class="form-section-title">
+              <i data-lucide="image"></i> C. Cake Photo Upload (Persistent)
+            </div>
+
+            <input type="file" id="cake-photo-input" name="cake_photo" accept="image/jpeg,image/png,image/webp" style="display:none;">
+
+            <div class="upload-dropzone" id="photo-dropzone">
+              <div id="upload-prompt-area" style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                <div class="upload-icon">
+                  <i data-lucide="upload-cloud"></i>
+                </div>
+                <div class="upload-text">
+                  <strong>Click to upload</strong> or drag and drop cake reference photo
+                </div>
+                <div class="upload-hint">Supports JPG, PNG, WEBP (Max 15MB)</div>
+              </div>
+
+              <div id="upload-preview-area" style="display:none; width:100%;">
+                <div class="photo-preview-box">
+                  <img id="cake-preview-img" src="" alt="Cake Preview">
+                  <div class="preview-actions">
+                    <button type="button" class="btn btn-sm btn-secondary" id="replace-photo-btn">
+                      <i data-lucide="refresh-cw"></i> Replace
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="remove-preview-btn" style="color:#C53030;">
+                      <i data-lucide="trash-2"></i> Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- D. Order & Financial Details -->
+          <div class="form-section" style="margin-top: 18px;">
+            <div class="form-section-title">
+              <i data-lucide="calendar-check"></i> D. Order & Delivery Details
+            </div>
+            <div class="form-grid form-grid-3">
+              <div class="form-group">
+                <label class="form-label">Order Number</label>
+                <input type="text" id="form-order-number" name="order_number" class="form-input" readonly>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Order Date</label>
+                <input type="date" id="form-order-date" name="order_date" class="form-input" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Delivery Date <span class="required">*</span></label>
+                <input type="date" id="form-delivery-date" name="delivery_date" class="form-input" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Delivery Time</label>
+                <input type="text" id="form-delivery-time" name="delivery_time" class="form-input" value="05:00 PM">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Order Status</label>
+                <select id="form-status" name="status" class="form-select">
+                  <option value="Pending">Pending</option>
+                  <option value="Preparing">Preparing</option>
+                  <option value="Ready">Ready</option>
+                  <option value="Delivered">Delivered</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Assigned Baker</label>
+                <input type="text" id="form-baker" name="assigned_baker" class="form-input" value="Chef Rahul">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Total Price (₹) <span class="required">*</span></label>
+                <input type="number" id="form-total-price" name="total_price" class="form-input" min="0" step="10" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Advance Paid (₹)</label>
+                <input type="number" id="form-advance-payment" name="advance_payment" class="form-input" min="0" step="10" value="0">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Remaining Balance (₹)</label>
+                <input type="text" id="form-remaining-balance" class="form-input" readonly style="font-weight:700; color:var(--primary);">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <select id="form-payment-method" name="payment_method" class="form-select">
+                  <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+                  <option value="Cash">Cash on Delivery</option>
+                  <option value="Card">Credit / Debit Card</option>
+                  <option value="Bank Transfer">Bank Transfer / IMPS</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="App.closeModal('order-form-modal')">Cancel</button>
+        <button type="button" class="btn btn-secondary" onclick="OrderFormModule.saveOrder(true)">Save & Add Another</button>
+        <button type="button" class="btn btn-primary" id="save-order-btn" onclick="OrderFormModule.saveOrder(false)">
+          <i data-lucide="check"></i> Save Order
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 2: VIEW ORDER DETAILS MODAL
+       ======================================================================== -->
+  <div class="modal-backdrop" id="view-order-modal">
+    <div class="modal-container" style="max-width: 860px;">
+      
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i data-lucide="file-text"></i> Order Details: <span id="view-modal-order-number" style="color:var(--primary);">C101</span>
+        </h2>
+        <button class="modal-close-btn" onclick="App.closeModal('view-order-modal')">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Status Stepper -->
+        <div class="status-stepper">
+          <div class="step-item" id="stepper-pending">
+            <div class="step-circle">1</div>
+            <span class="step-label">Pending</span>
+          </div>
+          <div class="step-line" id="line-1"></div>
+
+          <div class="step-item" id="stepper-preparing">
+            <div class="step-circle">2</div>
+            <span class="step-label">Preparing</span>
+          </div>
+          <div class="step-line" id="line-2"></div>
+
+          <div class="step-item" id="stepper-ready">
+            <div class="step-circle">3</div>
+            <span class="step-label">Ready</span>
+          </div>
+          <div class="step-line" id="line-3"></div>
+
+          <div class="step-item" id="stepper-delivered">
+            <div class="step-circle">4</div>
+            <span class="step-label">Delivered</span>
+          </div>
+        </div>
+
+        <div class="order-details-grid">
+          
+          <!-- Cake Photo Showcase -->
+          <div class="order-photo-showcase">
+            <img id="view-cake-img" class="order-photo-big" src="" alt="Cake Photo">
+            <div class="info-box" style="text-align:center;">
+              <span style="font-size:12px; color:var(--text-muted);">Assigned Baker</span>
+              <strong id="view-assigned-baker" style="font-size:14px; color:var(--text-primary);">Chef Rahul</strong>
+            </div>
+          </div>
+
+          <!-- Order & Customer Specs -->
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            
+            <!-- Customer Box -->
+            <div class="info-box">
+              <div style="font-weight:700; color:var(--primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Customer Information</div>
+              <div class="info-row"><span class="label">Name:</span> <span class="value" id="view-customer-name">Priya Sharma</span></div>
+              <div class="info-row"><span class="label">Phone:</span> <span class="value" id="view-customer-phone">+91 98765 43210</span></div>
+              <div class="info-row"><span class="label">Email:</span> <span class="value" id="view-customer-email">priya@example.com</span></div>
+              <div class="info-row"><span class="label">Delivery Address:</span> <span class="value" id="view-customer-address">Bandra West, Mumbai</span></div>
+            </div>
+
+            <!-- Cake Details Box -->
+            <div class="info-box">
+              <div style="font-weight:700; color:var(--primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Cake Specifications</div>
+              <div class="info-row"><span class="label">Cake Name:</span> <span class="value" id="view-cake-name">Floral Cake</span></div>
+              <div class="info-row"><span class="label">Flavour:</span> <span class="value" id="view-cake-flavour">Vanilla</span></div>
+              <div class="info-row"><span class="label">Weight & Shape:</span> <span class="value"><span id="view-cake-weight">1 kg</span> (<span id="view-cake-shape">Round</span>)</span></div>
+              <div class="info-row"><span class="label">Dietary:</span> <span class="value" id="view-cake-egg">Eggless</span></div>
+              <div class="info-row"><span class="label">Theme & Colour:</span> <span class="value"><span id="view-cake-theme">Floral</span> · <span id="view-cake-colour">Pastel</span></span></div>
+              <div class="info-row"><span class="label">Decorations:</span> <span class="value" id="view-cake-decorations">Edible roses</span></div>
+              <div class="info-row"><span class="label">Message on Cake:</span> <span class="value" id="view-cake-message" style="color:var(--primary); font-style:italic;">"Happy Birthday"</span></div>
+              <div class="info-row"><span class="label">Design Details:</span> <span class="value" id="view-cake-description">Pastel buttercream design</span></div>
+              <div class="info-row"><span class="label">Special Notes:</span> <span class="value" id="view-cake-instructions">Less sugar</span></div>
+            </div>
+
+            <!-- Payment & Delivery Schedule -->
+            <div class="info-box">
+              <div style="font-weight:700; color:var(--primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Delivery & Payment</div>
+              <div class="info-row"><span class="label">Order Date:</span> <span class="value" id="view-order-date">2026-10-10</span></div>
+              <div class="info-row"><span class="label">Delivery Schedule:</span> <span class="value"><span id="view-delivery-date">2026-10-11</span> at <span id="view-delivery-time">05:00 PM</span></span></div>
+              <div class="info-row"><span class="label">Total Amount:</span> <span class="value" id="view-total-price">₹1,200</span></div>
+              <div class="info-row"><span class="label">Advance Paid:</span> <span class="value" id="view-advance-payment" style="color:#10B981;">₹600</span></div>
+              <div class="info-row"><span class="label">Remaining Balance:</span> <span class="value" id="view-remaining-balance" style="color:#E53E3E; font-size:15px;">₹600</span></div>
+              <div class="info-row"><span class="label">Payment Status:</span> <span class="value" id="view-payment-status">Partial</span></div>
+              <div class="info-row"><span class="label">Payment Method:</span> <span class="value" id="view-payment-method">UPI</span></div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="view-print-btn">
+          <i data-lucide="printer"></i> Print Ticket
+        </button>
+        <button type="button" class="btn btn-secondary" id="view-edit-btn">
+          <i data-lucide="pencil"></i> Edit Order
+        </button>
+        <button type="button" class="btn btn-secondary" style="color:#C53030;" id="view-delete-btn">
+          <i data-lucide="trash-2"></i> Delete
+        </button>
+        <button type="button" class="btn btn-primary" onclick="App.closeModal('view-order-modal')">Done</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 3: CUSTOMER PROFILE & ORDER HISTORY
+       ======================================================================== -->
+  <div class="modal-backdrop" id="customer-profile-modal">
+    <div class="modal-container" style="max-width: 700px;">
+      
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i data-lucide="user"></i> Customer Profile: <span id="cust-profile-name" style="color:var(--primary);">Priya</span>
+        </h2>
+        <button class="modal-close-btn" onclick="App.closeModal('customer-profile-modal')">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="info-box">
+          <div class="info-row"><span class="label">Phone:</span> <span class="value" id="cust-profile-phone"></span></div>
+          <div class="info-row"><span class="label">Email:</span> <span class="value" id="cust-profile-email"></span></div>
+          <div class="info-row"><span class="label">Address:</span> <span class="value" id="cust-profile-address"></span></div>
+          <div class="info-row"><span class="label">Total Lifetime Orders:</span> <span class="value" id="cust-profile-orders-count"></span></div>
+          <div class="info-row"><span class="label">Total Amount Spent:</span> <span class="value" id="cust-profile-spent" style="color:var(--primary);"></span></div>
+        </div>
+
+        <h3 style="font-size:15px; margin-top:8px;">Order History & Past Cakes</h3>
+        <div id="cust-profile-orders-list"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="App.closeModal('customer-profile-modal')">Close</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 4: DELETE CONFIRMATION DIALOG
+       ======================================================================== -->
+  <div class="modal-backdrop" id="delete-confirm-modal">
+    <div class="modal-container" style="max-width: 440px;">
+      
+      <div class="modal-header">
+        <h2 class="modal-title" style="color:#C53030;">
+          <i data-lucide="alert-triangle"></i> Confirm Delete
+        </h2>
+        <button class="modal-close-btn" onclick="App.closeModal('delete-confirm-modal')">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size:14px; color:var(--text-secondary);">
+          Are you sure you want to delete this order? This action will permanently remove the order record and cannot be undone.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="App.closeModal('delete-confirm-modal')">Cancel</button>
+        <button type="button" class="btn btn-primary" style="background:#C53030; border-color:#C53030;" onclick="App.executeDeleteOrder()">
+          Delete Order
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/order-form.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+</body>
+</html>
