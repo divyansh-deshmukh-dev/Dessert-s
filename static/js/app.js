@@ -42,17 +42,31 @@ const App = {
     const mobileBtn = document.getElementById('mobile-menu-toggle');
     const closeBtn = document.getElementById('close-sidebar-btn');
     const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    const toggleSidebar = (open) => {
+      if (open) {
+        sidebar.classList.add('mobile-open');
+        if (overlay) overlay.classList.add('active');
+      } else {
+        sidebar.classList.remove('mobile-open');
+        if (overlay) overlay.classList.remove('active');
+      }
+    };
 
     if (mobileBtn && sidebar) {
       mobileBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('mobile-open');
+        const isOpen = sidebar.classList.contains('mobile-open');
+        toggleSidebar(!isOpen);
       });
     }
 
     if (closeBtn && sidebar) {
-      closeBtn.addEventListener('click', () => {
-        sidebar.classList.remove('mobile-open');
-      });
+      closeBtn.addEventListener('click', () => toggleSidebar(false));
+    }
+
+    if (overlay) {
+      overlay.addEventListener('click', () => toggleSidebar(false));
     }
   },
 
@@ -80,7 +94,9 @@ const App = {
 
     // Close mobile sidebar if open
     const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
     if (sidebar) sidebar.classList.remove('mobile-open');
+    if (overlay) overlay.classList.remove('active');
 
     // Hide specialized view containers
     const specializedViews = ['delivery', 'calendar', 'customers', 'settings'];
